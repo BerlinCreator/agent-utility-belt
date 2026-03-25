@@ -14,6 +14,13 @@ import { currencyRoutes } from "./routes/commodity/currency.js";
 import { ipGeoRoutes } from "./routes/commodity/ip-geo.js";
 import { stringUtilRoutes } from "./routes/commodity/string-utils.js";
 import { translationRoutes } from "./routes/commodity/translation.js";
+import { webExtractRoutes } from "./routes/high-demand/web-extract.js";
+import { socialDataRoutes } from "./routes/high-demand/social-data.js";
+import { leadEnrichmentRoutes } from "./routes/high-demand/lead-enrichment.js";
+import { serpAnalyzerRoutes } from "./routes/high-demand/serp-analyzer.js";
+import { siteMonitorRoutes } from "./routes/high-demand/site-monitor.js";
+import { priceTrackerRoutes } from "./routes/high-demand/price-tracker.js";
+import { reviewAggregatorRoutes } from "./routes/high-demand/review-aggregator.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { usageRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageTrackingHook } from "./middleware/usage.js";
@@ -102,6 +109,15 @@ export async function buildApp() {
     await protectedApp.register(ipGeoRoutes, { prefix: "/v1/ip" });
     await protectedApp.register(stringUtilRoutes, { prefix: "/v1/string" });
     await protectedApp.register(translationRoutes, { prefix: "/v1/translate" });
+
+    // High Demand APIs (Week 2)
+    await protectedApp.register(webExtractRoutes, { prefix: "/v1/extract" });
+    await protectedApp.register(socialDataRoutes, { prefix: "/v1/social" });
+    await protectedApp.register(leadEnrichmentRoutes, { prefix: "/v1/enrich" });
+    await protectedApp.register(serpAnalyzerRoutes, { prefix: "/v1/serp" });
+    await protectedApp.register(siteMonitorRoutes, { prefix: "/v1/monitor" });
+    await protectedApp.register(priceTrackerRoutes, { prefix: "/v1/price" });
+    await protectedApp.register(reviewAggregatorRoutes, { prefix: "/v1/reviews" });
   });
 
   return app;
