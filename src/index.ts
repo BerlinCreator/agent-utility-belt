@@ -21,6 +21,19 @@ import { serpAnalyzerRoutes } from "./routes/high-demand/serp-analyzer.js";
 import { siteMonitorRoutes } from "./routes/high-demand/site-monitor.js";
 import { priceTrackerRoutes } from "./routes/high-demand/price-tracker.js";
 import { reviewAggregatorRoutes } from "./routes/high-demand/review-aggregator.js";
+import { rateOracleRoutes } from "./routes/first-to-market/rate-oracle.js";
+import { patentSearchRoutes } from "./routes/first-to-market/patent-search.js";
+import { paperSearchRoutes } from "./routes/first-to-market/paper-search.js";
+import { companyDataRoutes } from "./routes/first-to-market/company-data.js";
+import { productScraperRoutes } from "./routes/first-to-market/product-scraper.js";
+import { sentimentRoutes } from "./routes/first-to-market/sentiment.js";
+import { resumeParserRoutes } from "./routes/first-to-market/resume-parser.js";
+import { salaryDataRoutes } from "./routes/first-to-market/salary-data.js";
+import { taxLookupRoutes } from "./routes/first-to-market/tax-lookup.js";
+import { ocrRoutes } from "./routes/first-to-market/ocr.js";
+import { calendarRoutes } from "./routes/first-to-market/calendar.js";
+import { codeRunnerRoutes } from "./routes/first-to-market/code-runner.js";
+import { mockServerRoutes } from "./routes/first-to-market/mock-server.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { usageRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageTrackingHook } from "./middleware/usage.js";
@@ -118,6 +131,21 @@ export async function buildApp() {
     await protectedApp.register(siteMonitorRoutes, { prefix: "/v1/monitor" });
     await protectedApp.register(priceTrackerRoutes, { prefix: "/v1/price" });
     await protectedApp.register(reviewAggregatorRoutes, { prefix: "/v1/reviews" });
+
+    // First-to-Market APIs (Week 3)
+    await protectedApp.register(rateOracleRoutes, { prefix: "/v1/rate-oracle" });
+    await protectedApp.register(patentSearchRoutes, { prefix: "/v1/patents" });
+    await protectedApp.register(paperSearchRoutes, { prefix: "/v1/papers" });
+    await protectedApp.register(companyDataRoutes, { prefix: "/v1/company" });
+    await protectedApp.register(productScraperRoutes, { prefix: "/v1/product" });
+    await protectedApp.register(sentimentRoutes, { prefix: "/v1/sentiment" });
+    await protectedApp.register(resumeParserRoutes, { prefix: "/v1/resume" });
+    await protectedApp.register(salaryDataRoutes, { prefix: "/v1/salary" });
+    await protectedApp.register(taxLookupRoutes, { prefix: "/v1/tax" });
+    await protectedApp.register(ocrRoutes, { prefix: "/v1/ocr" });
+    await protectedApp.register(calendarRoutes, { prefix: "/v1/calendar" });
+    await protectedApp.register(codeRunnerRoutes, { prefix: "/v1/code" });
+    await protectedApp.register(mockServerRoutes, { prefix: "/v1/mock" });
   });
 
   return app;
