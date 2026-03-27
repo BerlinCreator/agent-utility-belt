@@ -22,7 +22,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
 
-# Copy migrations if they exist (directory may be empty during early development)
+# Copy migrations. The entrypoint script skips migrations if this dir is empty.
+RUN mkdir -p ./drizzle
 COPY drizzle/ ./drizzle/
 
 # Entrypoint runs migrations then starts the server

@@ -25,6 +25,9 @@
   "author": "OpenClaw",
   "license": "MIT",
   "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"]
+  },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.4.0",
