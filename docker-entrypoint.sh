@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-# Run database migrations if the drizzle directory exists
+# Run database migrations in background so the app starts immediately
+# This allows Railway healthchecks to succeed while migrations run
 if [ -d "./drizzle" ] && [ "$(ls -A ./drizzle 2>/dev/null)" ]; then
-  echo "Running database migrations..."
-  node dist/db/migrate.js
-  echo "Migrations complete."
+  echo "Running database migrations in background..."
+  node dist/db/migrate.js &
 fi
 
-# Start the application
+# Start the application immediately
 exec node dist/index.js
