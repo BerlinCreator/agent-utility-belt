@@ -1,9 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { eq } from "drizzle-orm";
-import { db } from "../db/connection.js";
-import { apiKeys } from "../db/schema.js";
-import { AuthError } from "../utils/errors.js";
+import { AuthError, RateLimitError } from "../utils/errors.js";
 import type { Tier } from "../types/index.js";
+import { getSupabaseAdmin, type ApiKeyRecord } from "../lib/supabase.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -11,6 +9,27 @@ declare module "fastify" {
     apiKeyTier?: Tier;
     userId?: string;
   }
+}
+
+function startOfUtcDayIso() {
+  const now = new Date();
+  now.setUTCHours(0, 0, 0, 0);
+  return now.toISOString();
+}
+
+async function loadApiKeyRecord(key: string): Promise<ApiKeyRecord | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("api_keys")
+    .select("id,user_id,name,key,tier,daily_limit,usage_today,last_reset,created_at,is_active")
+    .eq("key", key)
+    .maybeSingle<ApiKeyRecord>();
+
+  if (error) {
+    throw new AuthError(`Failed to validate API key: ${error.message}`);
+  }
+
+  return data;
 }
 
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
@@ -28,25 +47,40 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     throw new AuthError("Invalid API key format.");
   }
 
-  const [apiKeyRecord] = await db
-    .select()
-    .from(apiKeys)
-    .where(eq(apiKeys.key, key))
-    .limit(1);
+  const apiKeyRecord = await loadApiKeyRecord(key);
 
   if (!apiKeyRecord) {
     throw new AuthError("Invalid API key.");
   }
 
-  if (!apiKeyRecord.isActive) {
+  if (!apiKeyRecord.is_active) {
     throw new AuthError("API key is deactivated.");
   }
 
-  if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
-    throw new AuthError("API key has expired.");
+  const todayIso = startOfUtcDayIso();
+  const needsReset = !apiKeyRecord.last_reset || apiKeyRecord.last_reset < todayIso;
+  const usageToday = needsReset ? 0 : apiKeyRecord.usage_today;
+
+  if (usageToday >= apiKeyRecord.daily_limit) {
+    throw new RateLimitError(
+      `Daily limit of ${apiKeyRecord.daily_limit} calls exceeded. Try again tomorrow or upgrade your tier.`,
+    );
+  }
+
+  const nextUsage = usageToday + 1;
+  const { error: updateError } = await getSupabaseAdmin()
+    .from("api_keys")
+    .update({
+      usage_today: nextUsage,
+      last_reset: todayIso,
+    })
+    .eq("id", apiKeyRecord.id);
+
+  if (updateError) {
+    throw new AuthError(`Failed to update API key usage: ${updateError.message}`);
   }
 
   request.apiKeyId = apiKeyRecord.id;
-  request.apiKeyTier = apiKeyRecord.tier;
-  request.userId = apiKeyRecord.userId;
+  request.apiKeyTier = apiKeyRecord.tier as Tier;
+  request.userId = apiKeyRecord.user_id;
 }
