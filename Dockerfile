@@ -1,9 +1,9 @@
 FROM node:22-slim AS base
-RUN corepack enable
 
 WORKDIR /app
 
-# Install dependencies
+# Install pnpm and dependencies
+RUN npm install -g pnpm@latest
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 
@@ -14,10 +14,10 @@ RUN pnpm build
 
 # Production stage
 FROM node:22-slim AS production
-RUN corepack enable
 
 WORKDIR /app
 
+RUN npm install -g pnpm@latest
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
