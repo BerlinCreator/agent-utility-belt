@@ -21,9 +21,15 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
+
+# Copy migrations if they exist (directory may be empty during early development)
 COPY drizzle/ ./drizzle/
+
+# Entrypoint runs migrations then starts the server
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

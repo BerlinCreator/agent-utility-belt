@@ -12,7 +12,12 @@ let redis: InstanceType<typeof Redis> | null = null;
 
 function getRedis(): InstanceType<typeof Redis> {
   if (!redis) {
-    redis = new Redis(env.REDIS_URL);
+    const isTls = env.REDIS_URL.startsWith("rediss://");
+    redis = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      // Railway managed Redis uses rediss:// (TLS). ioredis needs explicit tls option.
+      ...(isTls && { tls: { rejectUnauthorized: false } }),
+    });
   }
   return redis;
 }
