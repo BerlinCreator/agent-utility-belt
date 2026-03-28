@@ -2,8 +2,8 @@ FROM node:22-slim AS base
 
 WORKDIR /app
 
-# Use corepack (built into Node 22) to enable pnpm — no npm registry needed
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+# Install pnpm and dependencies
+RUN npm install -g pnpm@latest
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 
@@ -17,7 +17,7 @@ FROM node:22-slim AS production
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN npm install -g pnpm@latest
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
