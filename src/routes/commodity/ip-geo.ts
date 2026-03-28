@@ -42,6 +42,22 @@ async function lookupIp(ip: string): Promise<IpGeoResult> {
   };
 }
 
+function getClientIp(forwardedForHeader: string | undefined, requestIp: string): string {
+  const forwardedIp = forwardedForHeader?.split(",")[0]?.trim();
+  const candidate = forwardedIp || requestIp;
+  return normalizeIp(candidate);
+}
+
+function normalizeIp(ip: string): string {
+  if (ip.startsWith("::ffff:")) {
+    return ip.slice(7);
+  }
+
+  if (ip === "::1") return "127.0.0.1";
+
+  return ip;
+}
+
 interface IpApiResponse {
   status: string;
   message?: string;
@@ -86,7 +102,7 @@ export async function ipGeoRoutes(app: FastifyInstance): Promise<void> {
 
   // GET /v1/ip/me — lookup the requester's IP
   app.get("/me", async (request, reply) => {
-    const ip = request.ip;
+    const ip = getClientIp(request.headers["x-forwarded-for"] as string | undefined, request.ip);
     const result = await lookupIp(ip);
     sendSuccess(reply, result);
   });
