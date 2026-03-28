@@ -10,3 +10,4 @@ fi
 
 # Start the application immediately
 exec node dist/index.js
+# force rebuild 1774732159
