@@ -80,6 +80,33 @@ describe("Rate Oracle API", () => {
       globalThis.fetch = originalFetch;
     });
 
+    it("should accept a known service name", async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+        headers: new Headers({
+          "x-ratelimit-limit": "5000",
+          "x-ratelimit-remaining": "4999",
+        }),
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/v1/rate-oracle/check",
+        headers: { "x-api-key": "valid-test-key" },
+        payload: { service: "openai" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.payload);
+      expect(body.success).toBe(true);
+      expect(body.data.service).toBe("openai");
+      expect(body.data.url).toBe("https://api.openai.com/v1/models");
+
+      globalThis.fetch = originalFetch;
+    });
+
     it("should reject invalid URL", async () => {
       const response = await app.inject({
         method: "POST",
