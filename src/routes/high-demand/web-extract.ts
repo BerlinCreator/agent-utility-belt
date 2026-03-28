@@ -6,7 +6,7 @@ import { AppError } from "../../utils/errors.js";
 
 const extractSchema = z.object({
   url: z.string().url(),
-  selectors: z.array(z.string()).optional(),
+  selectors: z.record(z.string(), z.string()).optional(),
   format: z.enum(["text", "html", "json"]).default("json"),
 });
 
@@ -71,10 +71,10 @@ export async function webExtractRoutes(app: FastifyInstance): Promise<void> {
     });
 
     let content: string;
-    if (params.selectors && params.selectors.length > 0) {
+    if (params.selectors && Object.keys(params.selectors).length > 0) {
       const selectorResults: Record<string, string> = {};
-      for (const selector of params.selectors) {
-        selectorResults[selector] = params.format === "html"
+      for (const [key, selector] of Object.entries(params.selectors)) {
+        selectorResults[key] = params.format === "html"
           ? $(selector).html() ?? ""
           : $(selector).text().trim();
       }
@@ -89,7 +89,7 @@ export async function webExtractRoutes(app: FastifyInstance): Promise<void> {
       url: params.url,
       title,
       description,
-      content: content.slice(0, 50000), // Cap content size
+      content: content.slice(0, 50000),
       links: [...new Set(links)].slice(0, 100),
       images: [...new Set(images)].slice(0, 50),
       metadata,

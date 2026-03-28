@@ -79,6 +79,28 @@ describe("Web Extract API", () => {
       expect(response.statusCode).toBeGreaterThanOrEqual(400);
     });
 
+    it("should accept selector maps in the request body", async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('<html><body><h1>Hello</h1></body></html>'),
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/v1/extract/extract",
+        headers: { "x-api-key": "valid-test-key" },
+        payload: { url: "https://example.com", selectors: { title: "h1" } },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.payload);
+      expect(body.success).toBe(true);
+      expect(body.data.content).toContain('"title":"Hello"');
+
+      globalThis.fetch = originalFetch;
+    });
+
     it("should accept valid format options", async () => {
       // Mock global fetch
       const originalFetch = globalThis.fetch;
