@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm@latest
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Build
@@ -18,7 +18,7 @@ FROM node:22-slim AS production
 WORKDIR /app
 
 RUN npm install -g pnpm@latest
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
 
@@ -33,4 +33,4 @@ RUN chmod +x docker-entrypoint.sh
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["./docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
