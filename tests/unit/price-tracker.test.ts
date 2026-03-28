@@ -68,6 +68,36 @@ describe("Price Tracker API", () => {
       expect(response.statusCode).toBeGreaterThanOrEqual(400);
     });
 
+    it("should accept query-only lookups", async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(`
+          <html><body>
+            <h3>iPhone 16 Deals</h3>
+            <div data-sh-orig-price="999.99" data-sh-currency="USD"></div>
+            <img src="https://img.example.com/iphone.jpg" />
+          </body></html>
+        `),
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/v1/price/lookup",
+        headers: { "x-api-key": "valid-test-key" },
+        payload: { query: "iPhone 16" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.payload);
+      expect(body.success).toBe(true);
+      expect(body.data.platform).toBe("search");
+      expect(body.data.query).toBe("iPhone 16");
+      expect(body.data.price).toBe("999.99");
+
+      globalThis.fetch = originalFetch;
+    });
+
     it("should detect amazon platform and parse price", async () => {
       const originalFetch = globalThis.fetch;
       globalThis.fetch = vi.fn().mockResolvedValue({

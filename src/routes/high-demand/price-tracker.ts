@@ -2,14 +2,23 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import * as cheerio from "cheerio";
 import { sendSuccess } from "../../utils/response.js";
-import { AppError } from "../../utils/errors.js";
+import { AppError, ValidationError } from "../../utils/errors.js";
 
 const lookupSchema = z.object({
-  url: z.string().url(),
+  url: z.string().url().optional(),
+  query: z.string().min(1).max(500).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.url && !value.query) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Either url or query is required",
+      path: ["url"],
+    });
+  }
 });
 
 interface PriceResult {
-  url: string;
+  url: string | null;
   platform: string;
   title: string | null;
   price: string | null;
@@ -17,6 +26,7 @@ interface PriceResult {
   availability: string | null;
   imageUrl: string | null;
   timestamp: string;
+  query?: string;
 }
 
 function detectPlatform(url: string): string {
@@ -77,7 +87,6 @@ function parseGenericPrice($: cheerio.CheerioAPI): Partial<PriceResult> {
     $("title").text().trim() ||
     null;
 
-  // Try common price selectors and structured data
   const priceEl =
     $('[itemprop="price"]').attr("content") ||
     $('[data-price]').attr("data-price") ||
@@ -96,13 +105,18 @@ function parseGenericPrice($: cheerio.CheerioAPI): Partial<PriceResult> {
   return { title, price, currency, availability: null, imageUrl };
 }
 
+function buildSearchUrl(query: string): string {
+  return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`;
+}
+
 export async function priceTrackerRoutes(app: FastifyInstance): Promise<void> {
   app.post("/lookup", async (request, reply) => {
     const params = lookupSchema.parse(request.body);
+    const targetUrl = params.url ?? buildSearchUrl(params.query!);
 
     let html: string;
     try {
-      const response = await fetch(params.url, {
+      const response = await fetch(targetUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml",
@@ -122,7 +136,7 @@ export async function priceTrackerRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const $ = cheerio.load(html);
-    const platform = detectPlatform(params.url);
+    const platform = params.url ? detectPlatform(params.url) : "search";
 
     let parsed: Partial<PriceResult>;
     switch (platform) {
@@ -132,13 +146,27 @@ export async function priceTrackerRoutes(app: FastifyInstance): Promise<void> {
       case "ebay":
         parsed = parseEbayPrice($);
         break;
+      case "search": {
+        parsed = {
+          title: $("h3").first().text().trim() || params.query || null,
+          price: $('[data-sh-orig-price]').first().attr('data-sh-orig-price') || null,
+          currency: $('[data-sh-currency]').first().attr('data-sh-currency') || null,
+          availability: null,
+          imageUrl: $('img').first().attr('src') || null,
+        };
+        break;
+      }
       default:
         parsed = parseGenericPrice($);
         break;
     }
 
+    if (!params.url && !params.query) {
+      throw new ValidationError("Either url or query is required");
+    }
+
     const result: PriceResult = {
-      url: params.url,
+      url: params.url ?? null,
       platform,
       title: parsed.title ?? null,
       price: parsed.price ?? null,
@@ -146,6 +174,7 @@ export async function priceTrackerRoutes(app: FastifyInstance): Promise<void> {
       availability: parsed.availability ?? null,
       imageUrl: parsed.imageUrl ?? null,
       timestamp: new Date().toISOString(),
+      ...(params.query ? { query: params.query } : {}),
     };
 
     sendSuccess(reply, result);
