@@ -154,13 +154,13 @@ export async function buildApp() {
 // Start server if run directly
 const isMainModule = process.argv[1]?.includes("index");
 if (isMainModule) {
-  const app = await buildApp();
   try {
+    const app = await buildApp();
     await app.listen({ port: env.PORT, host: env.HOST });
     app.log.info(`Server running on http://${env.HOST}:${env.PORT}`);
     app.log.info(`API docs at http://${env.HOST}:${env.PORT}/docs`);
   } catch (err) {
-    app.log.error(err);
+    console.error("Fatal startup error:", err);
     process.exit(1);
   }
 }

@@ -10,5 +10,10 @@ async function runMigrations() {
 
 runMigrations().catch((err) => {
   console.error("Migration failed:", err);
-  process.exit(1);
+  // Exit 1 only when run directly (not as background child in docker-entrypoint)
+  if (process.ppid === 1) {
+    process.exitCode = 1;
+  } else {
+    process.exit(1);
+  }
 });
