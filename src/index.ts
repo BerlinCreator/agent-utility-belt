@@ -58,6 +58,14 @@ import { convertRoutes } from "./routes/kernel/convert.js";
 import { summarizeRoutes } from "./routes/kernel/summarize.js";
 import { formRoutes } from "./routes/kernel/form.js";
 import { contextRoutes } from "./routes/kernel/context.js";
+import { docgenRoutes } from "./routes/advanced/docgen.js";
+import { handoffRoutes } from "./routes/advanced/handoff.js";
+import { escalationRoutes } from "./routes/advanced/escalation.js";
+import { disputeRoutes } from "./routes/advanced/dispute.js";
+import { entityRoutes } from "./routes/advanced/entity.js";
+import { verifyRoutes } from "./routes/advanced/verify.js";
+import { watermarkRoutes } from "./routes/advanced/watermark.js";
+import { attestRoutes } from "./routes/advanced/attest.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { usageRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageTrackingHook } from "./middleware/usage.js";
@@ -198,6 +206,16 @@ export async function buildApp() {
     await protectedApp.register(summarizeRoutes, { prefix: "/v1/summarize" });
     await protectedApp.register(formRoutes, { prefix: "/v1/form" });
     await protectedApp.register(contextRoutes, { prefix: "/v1/context" });
+
+    // Advanced APIs (Phase 4)
+    await protectedApp.register(docgenRoutes, { prefix: "/v1/docgen" });
+    await protectedApp.register(handoffRoutes, { prefix: "/v1/handoff" });
+    await protectedApp.register(escalationRoutes, { prefix: "/v1/escalation" });
+    await protectedApp.register(disputeRoutes, { prefix: "/v1/dispute" });
+    await protectedApp.register(entityRoutes, { prefix: "/v1/entity" });
+    await protectedApp.register(verifyRoutes, { prefix: "/v1/verify" });
+    await protectedApp.register(watermarkRoutes, { prefix: "/v1/watermark" });
+    await protectedApp.register(attestRoutes, { prefix: "/v1/attest" });
   });
 
   return app;
