@@ -34,6 +34,18 @@ import { ocrRoutes } from "./routes/first-to-market/ocr.js";
 import { calendarRoutes } from "./routes/first-to-market/calendar.js";
 import { codeRunnerRoutes } from "./routes/first-to-market/code-runner.js";
 import { mockServerRoutes } from "./routes/first-to-market/mock-server.js";
+import { heartbeatRoutes } from "./routes/kernel/heartbeat.js";
+import { auditRoutes } from "./routes/kernel/audit.js";
+import { lockRoutes } from "./routes/kernel/lock.js";
+import { gateRoutes } from "./routes/kernel/gate.js";
+import { quotaRoutes } from "./routes/kernel/quota.js";
+import { checkpointRoutes } from "./routes/kernel/checkpoint.js";
+import { storeRoutes } from "./routes/kernel/store.js";
+import { secretRoutes } from "./routes/kernel/secret.js";
+import { queueRoutes } from "./routes/kernel/queue.js";
+import { policyRoutes } from "./routes/kernel/policy.js";
+import { webhookRoutes } from "./routes/kernel/webhook.js";
+import { scheduleRoutes } from "./routes/kernel/schedule.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { usageRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageTrackingHook } from "./middleware/usage.js";
@@ -61,7 +73,7 @@ export async function buildApp() {
     openapi: {
       info: {
         title: "Agent Utility Belt API",
-        description: "29-API suite for AI agent builders",
+        description: "41-API suite for AI agent builders",
         version: "0.1.0",
       },
       components: {
@@ -146,6 +158,20 @@ export async function buildApp() {
     await protectedApp.register(calendarRoutes, { prefix: "/v1/calendar" });
     await protectedApp.register(codeRunnerRoutes, { prefix: "/v1/code" });
     await protectedApp.register(mockServerRoutes, { prefix: "/v1/mock" });
+
+    // Agent Kernel APIs (Phase 1)
+    await protectedApp.register(heartbeatRoutes, { prefix: "/v1/heartbeat" });
+    await protectedApp.register(auditRoutes, { prefix: "/v1/audit" });
+    await protectedApp.register(lockRoutes, { prefix: "/v1/lock" });
+    await protectedApp.register(gateRoutes, { prefix: "/v1/gate" });
+    await protectedApp.register(quotaRoutes, { prefix: "/v1/quota" });
+    await protectedApp.register(checkpointRoutes, { prefix: "/v1/checkpoint" });
+    await protectedApp.register(storeRoutes, { prefix: "/v1/store" });
+    await protectedApp.register(secretRoutes, { prefix: "/v1/secret" });
+    await protectedApp.register(queueRoutes, { prefix: "/v1/queue" });
+    await protectedApp.register(policyRoutes, { prefix: "/v1/policy" });
+    await protectedApp.register(webhookRoutes, { prefix: "/v1/webhook" });
+    await protectedApp.register(scheduleRoutes, { prefix: "/v1/schedule" });
   });
 
   return app;

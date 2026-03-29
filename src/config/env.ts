@@ -17,6 +17,7 @@ const envSchema = z.object({
   LIBRETRANSLATE_URL: z.string().default("https://libretranslate.com"),
   SUPABASE_URL: z.string().url().default("https://xukffyrcavabdndxbzgh.supabase.co"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1a2ZmeXJjYXZhYmRuZHhiemdoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTgyNjI0NSwiZXhwIjoyMDg3NDAyMjQ1fQ.quIrMZQoPuaAMDAUtRYBOV8QwuCDWmPwLmURdsAHxQI"),
+  ENCRYPTION_KEY: z.string().length(64).default("0".repeat(64)),
 });
 
 export type Env = z.infer<typeof envSchema>;
