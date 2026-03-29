@@ -46,6 +46,18 @@ import { queueRoutes } from "./routes/kernel/queue.js";
 import { policyRoutes } from "./routes/kernel/policy.js";
 import { webhookRoutes } from "./routes/kernel/webhook.js";
 import { scheduleRoutes } from "./routes/kernel/schedule.js";
+import { diffRoutes } from "./routes/kernel/diff.js";
+import { redactRoutes } from "./routes/kernel/redact.js";
+import { rankRoutes } from "./routes/kernel/rank.js";
+import { dedupeRoutes } from "./routes/kernel/dedupe.js";
+import { classifyRoutes } from "./routes/kernel/classify.js";
+import { traceRoutes } from "./routes/kernel/trace.js";
+import { annotationRoutes } from "./routes/kernel/annotation.js";
+import { feedbackRoutes } from "./routes/kernel/feedback.js";
+import { convertRoutes } from "./routes/kernel/convert.js";
+import { summarizeRoutes } from "./routes/kernel/summarize.js";
+import { formRoutes } from "./routes/kernel/form.js";
+import { contextRoutes } from "./routes/kernel/context.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { usageRateLimitMiddleware } from "./middleware/rate-limit.js";
 import { usageTrackingHook } from "./middleware/usage.js";
@@ -172,6 +184,20 @@ export async function buildApp() {
     await protectedApp.register(policyRoutes, { prefix: "/v1/policy" });
     await protectedApp.register(webhookRoutes, { prefix: "/v1/webhook" });
     await protectedApp.register(scheduleRoutes, { prefix: "/v1/schedule" });
+
+    // Agent Utility APIs (Phase 2)
+    await protectedApp.register(diffRoutes, { prefix: "/v1/diff" });
+    await protectedApp.register(redactRoutes, { prefix: "/v1/redact" });
+    await protectedApp.register(rankRoutes, { prefix: "/v1/rank" });
+    await protectedApp.register(dedupeRoutes, { prefix: "/v1/dedupe" });
+    await protectedApp.register(classifyRoutes, { prefix: "/v1/classify" });
+    await protectedApp.register(traceRoutes, { prefix: "/v1/trace" });
+    await protectedApp.register(annotationRoutes, { prefix: "/v1/annotation" });
+    await protectedApp.register(feedbackRoutes, { prefix: "/v1/feedback" });
+    await protectedApp.register(convertRoutes, { prefix: "/v1/convert" });
+    await protectedApp.register(summarizeRoutes, { prefix: "/v1/summarize" });
+    await protectedApp.register(formRoutes, { prefix: "/v1/form" });
+    await protectedApp.register(contextRoutes, { prefix: "/v1/context" });
   });
 
   return app;

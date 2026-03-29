@@ -214,6 +214,60 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
 
 export const scheduleStatusEnum = pgEnum("schedule_status", ["active", "paused", "completed"]);
 
+// ─── Phase 2: Agent Utility Tables ──────────────────────────────────
+
+export const traces = pgTable("traces", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  metadata: jsonb("metadata"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_traces_status").on(table.status),
+]);
+
+export const spans = pgTable("spans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  traceId: uuid("trace_id").notNull().references(() => traces.id, { onDelete: "cascade" }),
+  parentSpanId: uuid("parent_span_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("ok"),
+  metadata: jsonb("metadata"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_spans_trace_id").on(table.traceId),
+]);
+
+export const annotations = pgTable("annotations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  target: varchar("target", { length: 255 }).notNull(),
+  label: varchar("label", { length: 255 }).notNull(),
+  body: text("body"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_annotations_target").on(table.target),
+  index("idx_annotations_label").on(table.label),
+]);
+
+export const feedbacks = pgTable("feedbacks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entityId: varchar("entity_id", { length: 255 }).notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  tags: jsonb("tags"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_feedbacks_entity_id").on(table.entityId),
+]);
+
 export const schedules = pgTable("schedules", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }),
