@@ -52,4 +52,61 @@ describe("Audit API", () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).pagination).toBeDefined();
   });
+
+  it("POST /v1/audit/log returns 400 for missing actor", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", headers, payload: { action: "login" } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /v1/audit/log returns 400 for missing action", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", headers, payload: { actor: "user-123" } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /v1/audit/log returns 400 for wrong type actor", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", headers, payload: { actor: 123, action: "login" } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /v1/audit/log returns 401 without api-key", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", payload: { actor: "user-123", action: "login" } });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("POST /v1/audit/log returns 401 with invalid api-key", async () => {
+    const { getSupabaseAdmin } = await import("../../src/lib/supabase.js");
+    const mockGetSupabase = getSupabaseAdmin as ReturnType<typeof vi.fn>;
+    mockGetSupabase.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      }),
+    });
+
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", headers: { "x-api-key": "invalid-key" }, payload: { actor: "user-123", action: "login" } });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("success response has correct format", async () => {
+    const { db } = await import("../../src/db/connection.js");
+    const mockDb = db as unknown as Record<string, ReturnType<typeof vi.fn>>;
+    mockDb.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{
+          id: "audit-2", actor: "user-456", action: "update", resource: "settings",
+          metadata: null, createdAt: new Date().toISOString(),
+        }]),
+      }),
+    });
+
+    const res = await app.inject({ method: "POST", url: "/v1/audit/log", headers, payload: { actor: "user-456", action: "update", resource: "settings" } });
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty("success", true);
+    expect(body).toHaveProperty("data");
+    expect(body.data).toHaveProperty("id");
+    expect(body.data).toHaveProperty("actor");
+  });
 });

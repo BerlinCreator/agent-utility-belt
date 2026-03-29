@@ -29,4 +29,47 @@ describe("Quota API", () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).data.key).toBe("user-123");
   });
+
+  it("POST /v1/quota/check returns 400 for missing key", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/quota/check", headers, payload: { limit: 100, windowMs: 60000 } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /v1/quota/check returns 400 for wrong type limit", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/quota/check", headers, payload: { key: "user-123", limit: "not-a-number", windowMs: 60000 } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("POST /v1/quota/check returns 401 without api-key", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/quota/check", payload: { key: "user-123", limit: 100, windowMs: 60000 } });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("POST /v1/quota/check returns 401 with invalid api-key", async () => {
+    const { getSupabaseAdmin } = await import("../../src/lib/supabase.js");
+    const mockGetSupabase = getSupabaseAdmin as ReturnType<typeof vi.fn>;
+    mockGetSupabase.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      }),
+    });
+
+    const res = await app.inject({ method: "POST", url: "/v1/quota/check", headers: { "x-api-key": "invalid-key" }, payload: { key: "user-123", limit: 100, windowMs: 60000 } });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("success response has correct format", async () => {
+    const res = await app.inject({ method: "POST", url: "/v1/quota/check", headers, payload: { key: "user-456", limit: 50, windowMs: 60000 } });
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty("success", true);
+    expect(body).toHaveProperty("data");
+    expect(body.data).toHaveProperty("key");
+    expect(body.data).toHaveProperty("allowed");
+    expect(body.data).toHaveProperty("current");
+    expect(body.data).toHaveProperty("remaining");
+  });
 });
