@@ -284,3 +284,56 @@ export const schedules = pgTable("schedules", {
   index("idx_schedules_status").on(table.status),
   index("idx_schedules_next_run_at").on(table.nextRunAt),
 ]);
+
+// ─── Phase 4: Advanced API Tables ──────────────────────────────────
+
+export const handoffStatusEnum = pgEnum("handoff_status", ["pending", "accepted", "rejected"]);
+
+export const handoffs = pgTable("handoffs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fromAgent: varchar("from_agent", { length: 255 }).notNull(),
+  toAgent: varchar("to_agent", { length: 255 }).notNull(),
+  task: text("task").notNull(),
+  context: jsonb("context"),
+  status: handoffStatusEnum("status").notNull().default("pending"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_handoffs_from_agent").on(table.fromAgent),
+  index("idx_handoffs_to_agent").on(table.toAgent),
+  index("idx_handoffs_status").on(table.status),
+]);
+
+export const escalationLevelEnum = pgEnum("escalation_level", ["low", "medium", "high", "critical"]);
+export const escalationStatusEnum = pgEnum("escalation_status", ["open", "escalated", "resolved"]);
+
+export const escalations = pgTable("escalations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  level: escalationLevelEnum("level").notNull(),
+  context: text("context").notNull(),
+  deadline: timestamp("deadline", { withTimezone: true }),
+  status: escalationStatusEnum("status").notNull().default("open"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_escalations_level").on(table.level),
+  index("idx_escalations_status").on(table.status),
+]);
+
+export const disputeStatusEnum = pgEnum("dispute_status", ["open", "review", "resolved"]);
+
+export const disputes = pgTable("disputes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  parties: jsonb("parties").notNull(),
+  reason: text("reason").notNull(),
+  status: disputeStatusEnum("status").notNull().default("open"),
+  resolution: text("resolution"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_disputes_status").on(table.status),
+]);
