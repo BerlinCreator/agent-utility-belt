@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, jsonb, uuid, varchar, index, pgEnum, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, jsonb, uuid, varchar, index, pgEnum, customType, numeric } from "drizzle-orm/pg-core";
 
 export const tierEnum = pgEnum("tier", ["free", "starter", "growth", "business", "enterprise"]);
 
@@ -336,4 +336,212 @@ export const disputes = pgTable("disputes", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("idx_disputes_status").on(table.status),
+]);
+export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "sent", "paid", "overdue", "cancelled"]);
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceNumber: varchar("invoice_number", { length: 50 }).notNull().unique(),
+  from: jsonb("from_party").notNull(),
+  to: jsonb("to_party").notNull(),
+  items: jsonb("items").notNull(),
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
+  taxRate: numeric("tax_rate", { precision: 5, scale: 2 }).notNull().default("0"),
+  taxAmount: numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  status: invoiceStatusEnum("status").notNull().default("draft"),
+  dueDate: timestamp("due_date", { withTimezone: true }),
+  notes: text("notes"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_invoices_number").on(table.invoiceNumber),
+  index("idx_invoices_status").on(table.status),
+]);
+
+export const contractStatusEnum = pgEnum("contract_status", ["draft", "active", "expired", "terminated"]);
+
+export const contracts = pgTable("contracts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 255 }).notNull(),
+  parties: jsonb("parties").notNull(),
+  templateId: varchar("template_id", { length: 100 }),
+  content: text("content").notNull(),
+  variables: jsonb("variables"),
+  status: contractStatusEnum("status").notNull().default("draft"),
+  effectiveDate: timestamp("effective_date", { withTimezone: true }),
+  expirationDate: timestamp("expiration_date", { withTimezone: true }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_contracts_status").on(table.status),
+  index("idx_contracts_template_id").on(table.templateId),
+]);
+
+export const expenseStatusEnum = pgEnum("expense_status", ["pending", "approved", "rejected", "reimbursed"]);
+
+export const expenses = pgTable("expenses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  category: varchar("category", { length: 100 }).notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  description: text("description"),
+  date: timestamp("date", { withTimezone: true }).notNull(),
+  status: expenseStatusEnum("status").notNull().default("pending"),
+  receipt: text("receipt"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_expenses_category").on(table.category),
+  index("idx_expenses_status").on(table.status),
+  index("idx_expenses_date").on(table.date),
+]);
+
+export const bizSubscriptionStatusEnum = pgEnum("biz_subscription_status", ["active", "paused", "cancelled", "expired"]);
+export const bizSubscriptionIntervalEnum = pgEnum("biz_subscription_interval", ["monthly", "quarterly", "yearly"]);
+
+export const bizSubscriptions = pgTable("biz_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  customerId: varchar("customer_id", { length: 255 }).notNull(),
+  planId: varchar("plan_id", { length: 255 }).notNull(),
+  status: bizSubscriptionStatusEnum("status").notNull().default("active"),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  interval: bizSubscriptionIntervalEnum("interval").notNull().default("monthly"),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_biz_subscriptions_customer_id").on(table.customerId),
+  index("idx_biz_subscriptions_status").on(table.status),
+]);
+
+export const ledgerEntryTypeEnum = pgEnum("ledger_entry_type", ["debit", "credit"]);
+
+export const ledgerAccounts = pgTable("ledger_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  type: varchar("type", { length: 50 }).notNull(),
+  balance: numeric("balance", { precision: 14, scale: 2 }).notNull().default("0"),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_ledger_accounts_name").on(table.name),
+  index("idx_ledger_accounts_type").on(table.type),
+]);
+
+export const ledgerEntries = pgTable("ledger_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  transactionId: varchar("transaction_id", { length: 100 }).notNull(),
+  accountId: uuid("account_id").notNull().references(() => ledgerAccounts.id, { onDelete: "cascade" }),
+  type: ledgerEntryTypeEnum("type").notNull(),
+  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  description: text("description"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_ledger_entries_transaction_id").on(table.transactionId),
+  index("idx_ledger_entries_account_id").on(table.accountId),
+  index("idx_ledger_entries_created_at").on(table.createdAt),
+]);
+
+export const payrollRuns = pgTable("payroll_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  employeeId: varchar("employee_id", { length: 255 }).notNull(),
+  employeeName: varchar("employee_name", { length: 255 }),
+  hoursWorked: numeric("hours_worked", { precision: 8, scale: 2 }).notNull(),
+  hourlyRate: numeric("hourly_rate", { precision: 10, scale: 2 }).notNull(),
+  grossPay: numeric("gross_pay", { precision: 12, scale: 2 }).notNull(),
+  deductions: jsonb("deductions").notNull().default([]),
+  totalDeductions: numeric("total_deductions", { precision: 12, scale: 2 }).notNull().default("0"),
+  netPay: numeric("net_pay", { precision: 12, scale: 2 }).notNull(),
+  payPeriodStart: timestamp("pay_period_start", { withTimezone: true }).notNull(),
+  payPeriodEnd: timestamp("pay_period_end", { withTimezone: true }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_payroll_runs_employee_id").on(table.employeeId),
+  index("idx_payroll_runs_created_at").on(table.createdAt),
+]);
+
+export const couponTypeEnum = pgEnum("coupon_type", ["percentage", "fixed"]);
+
+export const coupons = pgTable("coupons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  type: couponTypeEnum("type").notNull(),
+  value: numeric("value", { precision: 10, scale: 2 }).notNull(),
+  minPurchase: numeric("min_purchase", { precision: 12, scale: 2 }),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_coupons_code").on(table.code),
+  index("idx_coupons_is_active").on(table.isActive),
+]);
+
+export const refundStatusEnum = pgEnum("refund_status", ["requested", "approved", "processing", "completed", "rejected"]);
+
+export const refunds = pgTable("refunds", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  status: refundStatusEnum("status").notNull().default("requested"),
+  processedBy: varchar("processed_by", { length: 255 }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_refunds_invoice_id").on(table.invoiceId),
+  index("idx_refunds_status").on(table.status),
+]);
+
+export const inventoryItems = pgTable("inventory_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sku: varchar("sku", { length: 100 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  quantity: integer("quantity").notNull().default(0),
+  reservedQuantity: integer("reserved_quantity").notNull().default(0),
+  price: numeric("price", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_inventory_items_sku").on(table.sku),
+]);
+
+export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
+
+export const approvalRequests = pgTable("approval_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: varchar("type", { length: 100 }).notNull(),
+  requesterId: varchar("requester_id", { length: 255 }).notNull(),
+  data: jsonb("data").notNull(),
+  status: approvalStatusEnum("approval_status").notNull().default("pending"),
+  decidedBy: varchar("decided_by", { length: 255 }),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_approval_requests_type").on(table.type),
+  index("idx_approval_requests_status").on(table.status),
+  index("idx_approval_requests_requester_id").on(table.requesterId),
 ]);

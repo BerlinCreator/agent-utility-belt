@@ -58,6 +58,18 @@ import { convertRoutes } from "./routes/kernel/convert.js";
 import { summarizeRoutes } from "./routes/kernel/summarize.js";
 import { formRoutes } from "./routes/kernel/form.js";
 import { contextRoutes } from "./routes/kernel/context.js";
+import { invoiceRoutes } from "./routes/kernel/invoice.js";
+import { contractRoutes } from "./routes/kernel/contract.js";
+import { expenseRoutes } from "./routes/kernel/expense.js";
+import { subscriptionBizRoutes } from "./routes/kernel/subscription-biz.js";
+import { ledgerRoutes } from "./routes/kernel/ledger.js";
+import { payrollRoutes } from "./routes/kernel/payroll.js";
+import { couponRoutes } from "./routes/kernel/coupon.js";
+import { cartRoutes } from "./routes/kernel/cart.js";
+import { checkoutRoutes } from "./routes/kernel/checkout.js";
+import { refundRoutes } from "./routes/kernel/refund.js";
+import { inventoryRoutes } from "./routes/kernel/inventory.js";
+import { approvalRoutes } from "./routes/kernel/approval.js";
 import { docgenRoutes } from "./routes/advanced/docgen.js";
 import { handoffRoutes } from "./routes/advanced/handoff.js";
 import { escalationRoutes } from "./routes/advanced/escalation.js";
@@ -206,6 +218,20 @@ export async function buildApp() {
     await protectedApp.register(summarizeRoutes, { prefix: "/v1/summarize" });
     await protectedApp.register(formRoutes, { prefix: "/v1/form" });
     await protectedApp.register(contextRoutes, { prefix: "/v1/context" });
+
+    // Business Operations APIs (Phase 3)
+    await protectedApp.register(invoiceRoutes, { prefix: "/v1/invoice" });
+    await protectedApp.register(contractRoutes, { prefix: "/v1/contract" });
+    await protectedApp.register(expenseRoutes, { prefix: "/v1/expense" });
+    await protectedApp.register(subscriptionBizRoutes, { prefix: "/v1/subscription" });
+    await protectedApp.register(ledgerRoutes, { prefix: "/v1/ledger" });
+    await protectedApp.register(payrollRoutes, { prefix: "/v1/payroll" });
+    await protectedApp.register(couponRoutes, { prefix: "/v1/coupon" });
+    await protectedApp.register(cartRoutes, { prefix: "/v1/cart" });
+    await protectedApp.register(checkoutRoutes, { prefix: "/v1/checkout" });
+    await protectedApp.register(refundRoutes, { prefix: "/v1/refund" });
+    await protectedApp.register(inventoryRoutes, { prefix: "/v1/inventory" });
+    await protectedApp.register(approvalRoutes, { prefix: "/v1/approval" });
 
     // Advanced APIs (Phase 4)
     await protectedApp.register(docgenRoutes, { prefix: "/v1/docgen" });
