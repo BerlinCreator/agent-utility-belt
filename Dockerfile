@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install pnpm via corepack (avoids OOM from npm install -g pnpm@latest in Railway)
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmrc.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Build
@@ -18,7 +18,7 @@ FROM node:22-slim AS production
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmrc.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
 
