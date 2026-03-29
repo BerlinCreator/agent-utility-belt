@@ -2,9 +2,9 @@ FROM node:22-slim AS base
 
 WORKDIR /app
 
-# Install pnpm and dependencies without npm global install during image build
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmrc.json ./
+# Install pnpm and dependencies
+RUN npm install -g pnpm@latest
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Build
@@ -17,8 +17,8 @@ FROM node:22-slim AS production
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmrc.json ./
+RUN npm install -g pnpm@latest
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=base /app/dist ./dist
 
